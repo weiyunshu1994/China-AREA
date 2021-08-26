@@ -134,6 +134,37 @@ class save_gfdt():
             print("write {} success".format(key))
         self.workbook.close()
 
+
+def write_2013_and_2014():
+    path_2013 = "2013年数据.txt"
+    path_2014 = "2014年数据.txt"
+    workbook = xlsxwriter.Workbook("中国区域信息表_2014.xlsx")
+
+    with open(path_2014,"r",encoding='utf-8') as f:
+        data = f.read()
+    code = re.findall(r'[0-9]{6}', data)
+    name = re.findall(r'[\u4e00-\u9fa5]{2,15}', data)
+    code_list = []
+    name_list = []
+    for tmp in code:
+        code_list.append(tmp)
+    for tmp in name:
+        name_list.append(tmp)
+    worksheet_1980 = workbook.add_worksheet("2014")
+    worksheet_1980.activate()
+    i = 0
+    for tmp in code_list:
+        i = i + 1
+        worksheet_1980.write_row('A' + str(i), [str(tmp)])
+    i = 0
+    for tmp in name_list:
+        i = i + 1
+        worksheet_1980.write_row('B' + str(i), [str(tmp)])
+    print("write {} success".format("2014"))
+    workbook.close()
+
+
+
 ##############################################
 # 功能：从腾讯地图的接口获取设备信息，并将其写到数据库当中
 ##############################################
@@ -586,8 +617,9 @@ def is_in_newfile(env):
 
 
 if __name__ == '__main__':
-    save = save_gfdt()
-    save.write()
+    write_2013_and_2014()
+    # save = save_gfdt()
+    # save.write()
     # is_in_newfile("stage")
     # write_to_sql()
     # m = read_gfdt()
