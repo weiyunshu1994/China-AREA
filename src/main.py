@@ -539,9 +539,9 @@ def test3():
 
 def write_to_sql():
     # 读取表格信息
-    f = open("data.txt",'a',encoding='utf-8')
+    f = open("../data/ABB区域信息更新SQL.txt",'a',encoding='utf-8')
     table = []
-    excel_path = r"ABB区域信息更新.xlsx"
+    excel_path = r"../data/ABB区域信息更新 - 副本.xlsx"
     data = xlrd.open_workbook(excel_path)
     # print("The number of worksheets is {0}".format(data.nsheets))
     # print("Worksheet names:{0}".format(data.sheet_names()))
@@ -615,9 +615,53 @@ def is_in_newfile(env):
             data_list.append(i)
     print(data_list)
 
+###################################
+# 功能：比较两年间区域信息的变更
+# 输入：
+#       year1：第一年的年份
+#       year2：第二年的年份, year2>year1
+# 输出：
+#       list1：撤销的区域编码
+#       list2：新增的区域编码
+###################################
+def diff_two_year(year1,year2):
+    excel_path_tx = r"../data/中国区域信息表.xlsx"
+    data_tx = xlrd.open_workbook(excel_path_tx)
+    sh1 = data_tx.sheet_by_name(str(year1))
+    data_code_year1 = sh1.col_values(0)
+    data_name_year1 = sh1.col_values(1)
+    year1_key = {}
+    for i in range(len(data_code_year1)):
+        year1_key[data_code_year1[i]]= data_name_year1[i]
+    sh2 = data_tx.sheet_by_name(str(year2))
+    data_code_year2 = sh2.col_values(0)
+    data_name_year2 = sh2.col_values(1)
+    year2_key = {}
+    for i in range(len(data_code_year2)):
+        year2_key[data_code_year2[i]] = data_name_year2[i]
+    # data_year2中有而data_year1中没有，即新增的区域
+    inc_code = list(set(data_code_year2).difference(set(data_code_year1)))
+    inc_list = []
+    for temp in inc_code:
+        inc_list.append([temp,year2_key[temp]])
+    # data_year1中有而data_year2中没有，即删除的区域
+    del_code = list(set(data_code_year1).difference(set(data_code_year2)))
+    del_list = []
+    for temp in del_code:
+        del_list.append([temp, year1_key[temp]])
+    print("相比于{}年，{}删除以下{}个区域".format(year1,year2,len(del_list)))
+    for i in del_list:
+        print(i)
+    # print(del_list)
+    print("相比于{}年，{}增加以下{}个区域".format(year1, year2,len(inc_list)))
+    for i in inc_list:
+        print(i)
+    # print(inc_list)
+
 
 if __name__ == '__main__':
-    write_2013_and_2014()
+    diff_two_year(2019,2020)
+    # write_2013_and_2014()
     # save = save_gfdt()
     # save.write()
     # is_in_newfile("stage")
