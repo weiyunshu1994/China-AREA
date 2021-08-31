@@ -5,14 +5,16 @@ import requests
 import xlsxwriter
 import xlrd
 import pypinyin
-from selenium.webdriver.support.wait import WebDriverWait
 from bs4 import BeautifulSoup
 
+##################################
+# 功能：保存官方1980到2020间的行政区划数据
+##################################
 class save_gfdt():
     def __init__(self):
-        # 从官方首页http://www.mca.gov.cn/article/sj/xzqh/1980/?上下载的链接是http://www.mca.gov.cn/article/sj/xzqh/1980/201705/20170515004409.shtml
-        #
-        self.url_list_key = {
+        # 从官方首页http://www.mca.gov.cn/article/sj/xzqh/1980/? 获取到每个年份的URL地址
+        # 除2013和2014外, 都是http格式，可直接爬取
+        self.url_list_key1 = {
             # "1980": "http://www.mca.gov.cn/article/sj/tjbz/a/201713/201708040959.html",
             # "1981": "http://www.mca.gov.cn/article/sj/tjbz/a/201713/201708041004.html",
             # "1982": "http://www.mca.gov.cn/article/sj/xzqh/1980/1980/201911180942.html",
@@ -46,73 +48,25 @@ class save_gfdt():
             # "2010": "http://www.mca.gov.cn/article/sj/tjbz/a/201713/201708220946.html",
             # "2011": "http://www.mca.gov.cn/article/sj/tjbz/a/201713/201707271552.html",
             # "2012": "http://www.mca.gov.cn/article/sj/tjbz/a/201713/201707271556.html",
-            "2013": "https://files2.mca.gov.cn/cws/201404/20140404125552372.htm",
-            "2014": "https://files2.mca.gov.cn/cws/201502/20150225163817214.html",
-            # "2015": "http://www.mca.gov.cn/article/sj/tjbz/a/2015/201706011127.html",
-            # "2016": "http://www.mca.gov.cn/article/sj/xzqh/1980/201705/201705311652.html",
-            # "2017": "http://www.mca.gov.cn/article/sj/xzqh/1980/201803/201803131454.html",
-            # "2018": "http://www.mca.gov.cn/article/sj/xzqh/1980/201903/201903011447.html",
-            # "2019": "http://www.mca.gov.cn/article/sj/xzqh/1980/2019/202002281436.html",
-            # "2020": "http://www.mca.gov.cn/article/sj/xzqh/2020/20201201.html"
+            "2015": "http://www.mca.gov.cn/article/sj/tjbz/a/2015/201706011127.html",
+            "2016": "http://www.mca.gov.cn/article/sj/xzqh/1980/201705/201705311652.html",
+            "2017": "http://www.mca.gov.cn/article/sj/xzqh/1980/201803/201803131454.html",
+            "2018": "http://www.mca.gov.cn/article/sj/xzqh/1980/201903/201903011447.html",
+            "2019": "http://www.mca.gov.cn/article/sj/xzqh/1980/2019/202002281436.html",
+            "2020": "http://www.mca.gov.cn/article/sj/xzqh/2020/20201201.html"
         }
-        self.workbook = xlsxwriter.Workbook("中国区域信息表2.xlsx")
+        # 2013年和2014年是https格式，需要将文本下载下来再正则匹配
+        self.url_list_key2 = {
+            "2013": "https://files2.mca.gov.cn/cws/201404/20140404125552372.htm",
+            "2014": "https://files2.mca.gov.cn/cws/201502/20150225163817214.html"
+        }
+        self.workbook = xlsxwriter.Workbook("../data/中国行政区划信息表.xlsx")
 
-    def bs(self):
-        url = "http://www.mca.gov.cn/article/sj/xzqh/2020/20201201.html"
-        res = requests.get(url)
-        # print(res.text)
-        soup = BeautifulSoup(res.text)
-        # print(soup.text)
-        # print(soup.td)
-
-        cost = re.findall(r'[1-9]+\.?[0-9]*', soup.text)
-
-        workbook = xlsxwriter.Workbook("官方数据.xlsx")
-        worksheet1 = workbook.add_worksheet("sheet0")
-        worksheet1.activate()
-        # title = ["ID", "名称"]
-        # worksheet1.write_row('A1', title)
-        i = 1
-        for j in cost:
-            insertData = j
-            row = 'A' + str(i)
-            worksheet1.write_row(row, [insertData])
-            i += 1
-        workbook.close()
-        print(len(cost))
-        print(cost)
-
-    def save_gfdt_to_xlsx(self):
-        res = requests.get(self.url_1980)
-        soup = BeautifulSoup(res.text)
-        code = re.findall(r'[0-9]{6}', soup.text)
-        name = re.findall(r'[\u4e00-\u9fa5]{2,15}',soup.text)
-        code_list = []
-        name_list = []
-        for tmp in code:
-            code_list.append(tmp)
-        for tmp in name:
-            name_list.append(tmp)
-        worksheet_1980 = self.workbook.add_worksheet(self.url_1980_sheet)
-        worksheet_1980.activate()
-        i = 0
-        for tmp in code_list:
-            i = i+1
-            worksheet_1980.write_row('A'+str(i), [str(tmp)])
-        i = 0
-        for tmp in name_list:
-            i = i + 1
-            worksheet_1980.write_row('B' + str(i), [str(tmp)])
-        # worksheet_1980.write_row("B", name_list)
-
-        print(code_list)
-        print(name_list)
-
-    def write(self):
-        for key, value in self.url_list_key.items():
+    def save_url_list_key1(self):
+        for key, value in self.url_list_key1.items():
             print("write {}".format(key))
             res = requests.get(value)
-            soup = BeautifulSoup(res.text)
+            soup = BeautifulSoup(res.text, features="html.parser")
             code = re.findall(r'[0-9]{6}', soup.text)
             name = re.findall(r'[\u4e00-\u9fa5]{2,15}', soup.text)
             code_list = []
@@ -121,54 +75,58 @@ class save_gfdt():
                 code_list.append(tmp)
             for tmp in name:
                 name_list.append(tmp)
-            worksheet_1980 = self.workbook.add_worksheet(key)
-            worksheet_1980.activate()
+            worksheet = self.workbook.add_worksheet(key)
+            worksheet.activate()
             i = 0
             for tmp in code_list:
                 i = i + 1
-                worksheet_1980.write_row('A' + str(i), [str(tmp)])
+                worksheet.write_row('A' + str(i), [str(tmp)])
             i = 0
             for tmp in name_list:
                 i = i + 1
-                worksheet_1980.write_row('B' + str(i), [str(tmp)])
+                worksheet.write_row('B' + str(i), [str(tmp)])
             print("write {} success".format(key))
         self.workbook.close()
 
+    def save_url_list_key2(self):
+        data_path = {
+            "2013": r"../data/2013年数据.txt",
+            "2014": r"../data/2014年数据.txt"
+        }
+        for key, value in data_path.items():
+            print("write {}".format(key))
+            with open(value,"r",encoding='utf-8') as f:
+                data = f.read()
+                code = re.findall(r'[0-9]{6}', data)
+                name = re.findall(r'[\u4e00-\u9fa5]{2,15}', data)
+            code_list = []
+            name_list = []
+            for tmp in code:
+                code_list.append(tmp)
+            for tmp in name:
+                name_list.append(tmp)
+            worksheet = self.workbook.add_worksheet(key)
+            worksheet.activate()
+            i = 0
+            for tmp in code_list:
+                i = i + 1
+                worksheet.write_row('A' + str(i), [str(tmp)])
+            i = 0
+            for tmp in name_list:
+                i = i + 1
+                worksheet.write_row('B' + str(i), [str(tmp)])
+            print("write {} success".format(key))
 
-def write_2013_and_2014():
-    path_2013 = "2013年数据.txt"
-    path_2014 = "2014年数据.txt"
-    workbook = xlsxwriter.Workbook("中国区域信息表_2014.xlsx")
-
-    with open(path_2014,"r",encoding='utf-8') as f:
-        data = f.read()
-    code = re.findall(r'[0-9]{6}', data)
-    name = re.findall(r'[\u4e00-\u9fa5]{2,15}', data)
-    code_list = []
-    name_list = []
-    for tmp in code:
-        code_list.append(tmp)
-    for tmp in name:
-        name_list.append(tmp)
-    worksheet_1980 = workbook.add_worksheet("2014")
-    worksheet_1980.activate()
-    i = 0
-    for tmp in code_list:
-        i = i + 1
-        worksheet_1980.write_row('A' + str(i), [str(tmp)])
-    i = 0
-    for tmp in name_list:
-        i = i + 1
-        worksheet_1980.write_row('B' + str(i), [str(tmp)])
-    print("write {} success".format("2014"))
-    workbook.close()
-
+    def run(self):
+        # self.save_url_list_key1()
+        self.save_url_list_key2()
+        self.workbook.close()
 
 
 ##############################################
 # 功能：从腾讯地图的接口获取设备信息，并将其写到数据库当中
 ##############################################
-class read_txdt:
+class save_txdt:
     def __init__(self):
         self.file_name = "腾讯地图.xlsx"
         self.sheet_name = "腾讯地图"
@@ -233,7 +191,7 @@ class read_txdt:
             return num[0:4] + "00"
 
 
-class read_lz:
+class save_lz:
     def __init__(self):
         self.url = "daas-stage-msyql.mysql.database.chinacloudapi.cn"
         self.user = "oicread@daas-stage-msyql"
@@ -272,6 +230,7 @@ class read_lz:
             worksheet1.write_row(row, insertData)
             i += 1
         workbook.close()
+
 
 ##############################################
 # 将sue整理好的拼音数据存放在腾讯地图当中
@@ -562,13 +521,6 @@ def write_to_sql():
     print(table)
     f.close()
 
-###################################################
-# 功能：比较并返回两个文件中不同的内容
-# 输入：两个xlsx文件
-# 输出：两个文件，属于文件A但不属于文件B的，属于文件B但不属于文件A的
-###################################################
-def diff_two_file():
-    pass
 
 ###################################################
 # 功能:读取数据库中的区域信息，判断是是否在新生成的文件当中
@@ -581,20 +533,20 @@ def is_in_newfile(env):
     # cost = re.findall(r'[1-9]+\.?[0-9]*', soup.text)
 
     if env == "oic":
-        db_con = "192.168.1.241"
-        db_user = "root"
-        db_pd = "root"
-        db_name = "daas_ms6"
+        db_con = ""
+        db_user = ""
+        db_pd = ""
+        db_name = ""
     elif env == "dev":
-        db_con = "daas-dev-mysql.mysql.database.chinacloudapi.cn"
-        db_user = "oicread@daas-dev-mysql"
-        db_pd = "bLz13&a1Oqya?5"
-        db_name = "abb_daas"
+        db_con = ""
+        db_user = ""
+        db_pd = ""
+        db_name = ""
     elif env == "stage":
-        db_con = "daas-stage-msyql.mysql.database.chinacloudapi.cn"
-        db_user = "oicread@daas-stage-msyql"
-        db_pd = "Kp13&a1pA3mty1?"
-        db_name = "abb_daas"
+        db_con = ""
+        db_user = ""
+        db_pd = ""
+        db_name = ""
     else:
         print("输入环境错误，请重新输入")
 
@@ -614,6 +566,7 @@ def is_in_newfile(env):
         if len(is_have) == 0:
             data_list.append(i)
     print(data_list)
+
 
 ###################################
 # 功能：比较两年间区域信息的变更
@@ -660,7 +613,8 @@ def diff_two_year(year1,year2):
 
 
 if __name__ == '__main__':
-    diff_two_year(2019,2020)
+    # diff_two_year(2019,2020)
+    save_gfdt().run()
     # write_2013_and_2014()
     # save = save_gfdt()
     # save.write()
